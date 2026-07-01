@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم — مكتب الهاشمي للعقار</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg-deep:#071E22; --bg-deep-2:#0A2A2E;
+    --panel:#0D3436; --panel-light:#124347;
+    --gold:#C9A227; --gold-light:#E8D384;
+    --gold-dim:rgba(201,162,39,.32); --gold-faint:rgba(201,162,39,.14);
+    --ivory:#F4EFE1; --ivory-muted:#B9C7C4;
+    --line:rgba(201,162,39,.25);
+    --sold:#B08326; --rented:#8A5A2B; --available:#3E8E7E;
+    --danger:#B34B4B;
+    --radius:14px;
+    --font-display:'Aref Ruqaa', serif;
+    --font-body:'Tajawal', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:
+      radial-gradient(circle at 15% 0%, rgba(14,58,82,.5), transparent 55%), var(--bg-deep);
+    color:var(--ivory);font-family:var(--font-body);line-height:1.6;
+  }
+  a{color:inherit;} img{max-width:100%;display:block;}
+  button,input,select,textarea{font-family:inherit;}
+
+  .container{max-width:1080px;margin:0 auto;padding:0 22px;}
+
+  /* ---------- LOGIN ---------- */
+  #loginScreen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:20px;
+  }
+  .login-card{
+    width:100%;max-width:380px;background:var(--panel);
+    border:1px solid var(--gold-dim);border-radius:20px;padding:40px 30px;
+    text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.45);
+  }
+  .login-card .glyph{width:40px;height:40px;margin:0 auto 12px;}
+  .login-card h1{font-family:var(--font-display);color:var(--gold-light);font-size:1.7rem;margin:0 0 4px;}
+  .login-card p{color:var(--ivory-muted);font-size:.82rem;margin:0 0 26px;}
+  .login-card input{
+    width:100%;background:rgba(7,30,34,.6);border:1px solid var(--line);border-radius:10px;
+    padding:13px 14px;color:var(--ivory);font-size:.95rem;margin-bottom:14px;outline:none;text-align:center;
+  }
+  .login-card input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-faint);}
+  .login-error{color:var(--danger);font-size:.8rem;min-height:18px;margin-bottom:10px;}
+
+  /* ---------- shared ---------- */
+  .btn-gold{
+    background:linear-gradient(180deg, var(--gold-light), var(--gold));color:#20200a;font-weight:700;
+    border:none;border-radius:999px;padding:12px 30px;font-size:.9rem;cursor:pointer;
+    box-shadow:0 8px 20px rgba(201,162,39,.25);transition:transform .15s ease;
+  }
+  .btn-gold:hover{transform:translateY(-2px);}
+  .btn-gold:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .btn-ghost{
+    background:transparent;border:1px solid var(--line);color:var(--ivory-muted);
+    border-radius:999px;padding:10px 20px;font-size:.82rem;cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold-light);}
+  .btn-danger{
+    background:rgba(179,75,75,.15);border:1px solid rgba(179,75,75,.5);color:#e79a9a;
+    border-radius:999px;padding:9px 18px;font-size:.78rem;cursor:pointer;
+  }
+  .btn-danger:hover{background:rgba(179,75,75,.28);}
+  .btn-small{
+    background:rgba(201,162,39,.12);border:1px solid var(--gold-dim);color:var(--gold-light);
+    border-radius:8px;padding:7px 12px;font-size:.75rem;cursor:pointer;
+  }
+  .btn-small.active{background:var(--gold);color:#20200a;}
+
+  /* ---------- topbar ---------- */
+  .admin-topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:30px;
+  }
+  .brand-mark{font-family:var(--font-display);font-size:1.35rem;color:var(--gold-light);display:flex;align-items:center;gap:10px;}
+  .brand-mark .glyph{width:26px;height:26px;}
+
+  /* ---------- panel / form ---------- */
+  .panel{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 26px 28px;margin-bottom:34px;
+  }
+  .panel h2{font-family:var(--font-display);color:var(--gold-light);font-size:1.4rem;margin:0 0 20px;}
+  .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.span-2{grid-column:span 2;}
+  .field.span-3{grid-column:span 3;}
+  .field label{font-size:.78rem;color:var(--gold-light);}
+  .field input,.field select,.field textarea{
+    background:rgba(7,30,34,.55);border:1px solid var(--line);border-radius:9px;
+    padding:11px 12px;color:var(--ivory);font-size:.88rem;outline:none;
+  }
+  .field textarea{resize:vertical;min-height:70px;font-family:inherit;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-faint);}
+  .field select option{background:var(--bg-deep-2);}
+
+  .img-drop{
+    border:1.5px dashed var(--gold-dim);border-radius:12px;padding:20px;text-align:center;
+    color:var(--ivory-muted);font-size:.82rem;cursor:pointer;margin-top:8px;transition:border-color .2s;
+  }
+  .img-drop:hover{border-color:var(--gold);}
+  .img-drop input{display:none;}
+  .img-count{color:var(--gold-light);font-size:.78rem;margin-top:8px;}
+  .thumb-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin-top:14px;
+  }
+  .thumb{
+    position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--line);
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover;}
+  .thumb .rm{
+    position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:rgba(0,0,0,.65);color:#fff;border:none;font-size:.7rem;cursor:pointer;line-height:1;
+  }
+  .thumb .tag-new{
+    position:absolute;bottom:3px;right:3px;background:var(--gold);color:#20200a;
+    font-size:.6rem;padding:1px 6px;border-radius:5px;
+  }
+
+  .form-actions{display:flex;gap:10px;margin-top:22px;align-items:center;}
+  .upload-progress{font-size:.78rem;color:var(--gold-light);margin-right:auto;}
+
+  /* ---------- list ---------- */
+  .list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+  .list-head input{
+    background:rgba(7,30,34,.55);border:1px solid var(--line);border-radius:9px;
+    padding:9px 12px;color:var(--ivory);font-size:.85rem;min-width:220px;outline:none;
+  }
+  .prop-row{
+    display:flex;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:12px;align-items:center;flex-wrap:wrap;
+  }
+  .prop-row .thumb-box{
+    width:84px;height:84px;border-radius:8px;overflow:hidden;flex:none;background:var(--bg-deep-2);
+    display:flex;align-items:center;justify-content:center;color:var(--gold-dim);font-size:.65rem;text-align:center;
+  }
+  .prop-row .thumb-box img{width:100%;height:100%;object-fit:cover;}
+  .prop-info{flex:1;min-width:220px;}
+  .prop-info h3{margin:0 0 4px;font-size:1rem;color:var(--ivory);}
+  .prop-info .meta{font-size:.78rem;color:var(--ivory-muted);display:flex;gap:14px;flex-wrap:wrap;}
+  .status-badge{
+    display:inline-block;font-size:.7rem;padding:3px 10px;border-radius:999px;margin-inline-start:6px;
+  }
+  .status-badge.متاح{background:rgba(62,142,126,.2);color:#7fd6c2;}
+  .status-badge.تم-البيع{background:rgba(176,131,38,.22);color:var(--gold-light);}
+  .status-badge.تم-الايجار{background:rgba(138,90,43,.25);color:#e0b98a;}
+  .prop-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ivory-muted);border:1px dashed var(--line);border-radius:var(--radius);}
+
+  @media (max-width:760px){
+    .form-grid{grid-template-columns:1fr 1fr;}
+    .field.span-2,.field.span-3{grid-column:span 2;}
+  }
+  @media (max-width:520px){
+    .form-grid{grid-template-columns:1fr;}
+    .field.span-2,.field.span-3{grid-column:span 1;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ شاشة الدخول ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <svg class="glyph" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="20,2 24,15 38,15 27,23 31,37 20,28 9,37 13,23 2,15 16,15" fill="var(--gold)"/>
+    </svg>
+    <h1>لوحة تحكم الأدمن</h1>
+    <p>مكتب الهاشمي للعقار</p>
+    <form id="loginForm">
+      <input type="password" id="loginPassword" placeholder="كلمة المرور" required autofocus>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-gold" style="width:100%;">دخول</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ لوحة التحكم ============ -->
+<div id="adminApp" class="container" style="display:none;padding-bottom:80px;">
+  <div class="admin-topbar">
+    <div class="brand-mark">
+      <svg class="glyph" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="20,2 24,15 38,15 27,23 31,37 20,28 9,37 13,23 2,15 16,15" fill="var(--gold)"/>
+      </svg>
+      لوحة تحكم الأدمن
+    </div>
+    <button class="btn-ghost" id="logoutBtn">تسجيل الخروج</button>
+  </div>
+
+  <div class="panel">
+    <h2 id="formTitle">إضافة عقار جديد</h2>
+    <form id="propertyForm">
+      <div class="form-grid">
+        <div class="field"><label>المحلة *</label><input id="p_mahalla" required></div>
+        <div class="field"><label>الزقاق *</label><input id="p_zuqaq" required></div>
+        <div class="field">
+          <label>بيع أو إيجار *</label>
+          <select id="p_type" required>
+            <option value="">اختر...</option>
+            <option value="بيع">بيع</option>
+            <option value="ايجار">إيجار</option>
+          </select>
+        </div>
+        <div class="field"><label>المساحة (م²)</label><input id="p_area" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>الواجهة (م)</label><input id="p_facade" type="number" min="0" step="0.01"></div>
+        <div class="field"><label>النزال</label><input id="p_nizal"></div>
+        <div class="field">
+          <label>الحالة</label>
+          <select id="p_status">
+            <option value="متاح">متاح</option>
+            <option value="تم البيع">تم البيع</option>
+            <option value="تم الايجار">تم الايجار</option>
+          </select>
+        </div>
+        <div class="field span-2"><label>ملاحظات إضافية (اختياري)</label><textarea id="p_notes" placeholder="أي تفاصيل إضافية تريد إظهارها للزائر"></textarea></div>
+
+        <div class="field span-3">
+          <label>صور العقار (حتى 50 صورة)</label>
+          <div class="img-drop" id="imgDrop">
+            اضغط هنا لاختيار الصور أو اسحبها إلى هذا المربع
+            <input type="file" id="imgInput" accept="image/*" multiple>
+          </div>
+          <div class="img-count" id="imgCount">لا توجد صور مختارة</div>
+          <div class="thumb-grid" id="thumbGrid"></div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <span class="upload-progress" id="uploadProgress"></span>
+        <button type="button" class="btn-ghost" id="cancelEditBtn" style="display:none;">إلغاء التعديل</button>
+        <button type="submit" class="btn-gold" id="saveBtn">حفظ العقار</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="list-head">
+      <h2 style="margin:0;">العقارات المضافة (<span id="totalCount">0</span>)</h2>
+      <input id="listSearch" placeholder="ابحث بالمحلة أو الزقاق...">
+    </div>
+    <div id="propList"></div>
+  </div>
+</div>
+
+<script>
+/* ========================================================
+   إعدادات لوحة التحكم — لا تغيّر البريد أدناه، هو ثابت للدخول
+   عند إنشاء مستخدم الأدمن في Supabase استخدم هذا البريد بالضبط
+======================================================== */
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const ADMIN_EMAIL = "admin@hashimi-realestate.iq";
+const STORAGE_BUCKET = "hashimi-property-images";
+const MAX_IMAGES = 50;
+/* ======================================================== */
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const loginScreen = document.getElementById('loginScreen');
+const adminApp = document.getElementById('adminApp');
+
+/* ---------------- تسجيل الدخول ---------------- */
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password });
+  if(error){
+    errEl.textContent = 'كلمة المرور غير صحيحة';
+    return;
+  }
+  showAdmin();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await sb.auth.signOut();
+  location.reload();
+});
+
+async function checkSession(){
+  const { data } = await sb.auth.getSession();
+  if(data.session){ showAdmin(); }
+}
+function showAdmin(){
+  loginScreen.style.display = 'none';
+  adminApp.style.display = 'block';
+  loadList();
+}
+checkSession();
+
+/* ---------------- إدارة الصور داخل النموذج ---------------- */
+let existingImages = [];   // صور محفوظة سابقاً (وضع التعديل)
+let removedImages = [];    // صور تم وضع علامة حذف عليها
+let queuedFiles = [];      // ملفات جديدة بانتظار الرفع {file, previewUrl}
+let editingId = null;
+
+const imgDrop = document.getElementById('imgDrop');
+const imgInput = document.getElementById('imgInput');
+imgDrop.addEventListener('click', ()=> imgInput.click());
+['dragover'].forEach(ev=> imgDrop.addEventListener(ev, e=>{e.preventDefault(); imgDrop.style.borderColor='var(--gold)';}));
+['dragleave','drop'].forEach(ev=> imgDrop.addEventListener(ev, e=>{e.preventDefault(); imgDrop.style.borderColor='var(--gold-dim)';}));
+imgDrop.addEventListener('drop', e=>{
+  handleFiles(e.dataTransfer.files);
+});
+imgInput.addEventListener('change', ()=> handleFiles(imgInput.files));
+
+function handleFiles(fileList){
+  const files = Array.from(fileList).filter(f=>f.type.startsWith('image/'));
+  const totalAfter = existingImages.filter(i=>!removedImages.includes(i)).length + queuedFiles.length + files.length;
+  if(totalAfter > MAX_IMAGES){
+    alert(`الحد الأقصى ${MAX_IMAGES} صورة للعقار الواحد.`);
+    return;
+  }
+  files.forEach(file=>{
+    queuedFiles.push({ file, previewUrl: URL.createObjectURL(file) });
+  });
+  imgInput.value = '';
+  renderThumbs();
+}
+
+function renderThumbs(){
+  const grid = document.getElementById('thumbGrid');
+  grid.innerHTML = '';
+  const activeExisting = existingImages.filter(url=>!removedImages.includes(url));
+
+  activeExisting.forEach(url=>{
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `<img src="${url}"><button type="button" class="rm">×</button>`;
+    div.querySelector('.rm').addEventListener('click', ()=>{
+      removedImages.push(url);
+      renderThumbs();
+    });
+    grid.appendChild(div);
+  });
+
+  queuedFiles.forEach((q, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `<img src="${q.previewUrl}"><span class="tag-new">جديدة</span><button type="button" class="rm">×</button>`;
+    div.querySelector('.rm').addEventListener('click', ()=>{
+      queuedFiles.splice(idx,1);
+      renderThumbs();
+    });
+    grid.appendChild(div);
+  });
+
+  const total = activeExisting.length + queuedFiles.length;
+  document.getElementById('imgCount').textContent = total === 0 ? 'لا توجد صور مختارة' : `${total} صورة من أصل ${MAX_IMAGES}`;
+}
+
+function resetForm(){
+  document.getElementById('propertyForm').reset();
+  existingImages = []; removedImages = []; queuedFiles = [];
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'إضافة عقار جديد';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('saveBtn').textContent = 'حفظ العقار';
+  renderThumbs();
+}
+
+document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+/* ---------------- حفظ (إضافة أو تعديل) ---------------- */
+document.getElementById('propertyForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const saveBtn = document.getElementById('saveBtn');
+  const progressEl = document.getElementById('uploadProgress');
+  saveBtn.disabled = true;
+
+  const payload = {
+    mahalla: document.getElementById('p_mahalla').value.trim(),
+    zuqaq: document.getElementById('p_zuqaq').value.trim(),
+    listing_type: document.getElementById('p_type').value,
+    area: document.getElementById('p_area').value || null,
+    facade: document.getElementById('p_facade').value || null,
+    nizal: document.getElementById('p_nizal').value.trim() || null,
+    status: document.getElementById('p_status').value,
+    notes: document.getElementById('p_notes').value.trim() || null,
+  };
+
+  try{
+    let propertyId = editingId;
+
+    if(!propertyId){
+      const { data, error } = await sb.from('hashimi_properties').insert(payload).select().single();
+      if(error) throw error;
+      propertyId = data.id;
+    }
+
+    // رفع الصور الجديدة
+    let uploadedUrls = [];
+    for(let i=0; i<queuedFiles.length; i++){
+      progressEl.textContent = `جاري رفع الصور... ${i+1}/${queuedFiles.length}`;
+      const { file } = queuedFiles[i];
+      const ext = file.name.split('.').pop();
+      const path = `${propertyId}/${Date.now()}_${i}.${ext}`;
+      const { error: upErr } = await sb.storage.from(STORAGE_BUCKET).upload(path, file, { upsert:false });
+      if(upErr) throw upErr;
+      const { data: pub } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+      uploadedUrls.push(pub.publicUrl);
+    }
+    progressEl.textContent = '';
+
+    // حذف الصور المزالة من التخزين
+    for(const url of removedImages){
+      const path = extractStoragePath(url);
+      if(path) await sb.storage.from(STORAGE_BUCKET).remove([path]);
+    }
+
+    const finalImages = [
+      ...existingImages.filter(u=>!removedImages.includes(u)),
+      ...uploadedUrls
+    ];
+
+    const { error: updateErr } = await sb.from('hashimi_properties')
+      .update({ ...payload, images: finalImages })
+      .eq('id', propertyId);
+    if(updateErr) throw updateErr;
+
+    resetForm();
+    loadList();
+  }catch(err){
+    console.error(err);
+    alert('حدث خطأ أثناء الحفظ: ' + (err.message || err));
+  }finally{
+    saveBtn.disabled = false;
+    progressEl.textContent = '';
+  }
+});
+
+function extractStoragePath(publicUrl){
+  const marker = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+  const idx = publicUrl.indexOf(marker);
+  if(idx === -1) return null;
+  return publicUrl.substring(idx + marker.length);
+}
+
+/* ---------------- قائمة العقارات ---------------- */
+let allProps = [];
+
+async function loadList(){
+  const { data, error } = await sb.from('hashimi_properties').select('*').order('created_at', { ascending:false });
+  if(error){ console.error(error); return; }
+  allProps = data || [];
+  document.getElementById('totalCount').textContent = allProps.length;
+  renderList(allProps);
+}
+
+function renderList(list){
+  const wrap = document.getElementById('propList');
+  if(list.length === 0){
+    wrap.innerHTML = `<div class="empty-state">لا توجد عقارات مضافة بعد.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(p=>{
+    const img = (p.images && p.images.length) ? p.images[0] : null;
+    const statusClass = p.status.replace(/\s+/g,'-');
+    return `
+    <div class="prop-row" data-id="${p.id}">
+      <div class="thumb-box">${img ? `<img src="${img}">` : 'لا صورة'}</div>
+      <div class="prop-info">
+        <h3>محلة ${p.mahalla} — زقاق ${p.zuqaq} <span class="status-badge ${statusClass}">${p.status}</span></h3>
+        <div class="meta">
+          <span>${p.listing_type}</span>
+          <span>المساحة: ${p.area || '—'} م²</span>
+          <span>الواجهة: ${p.facade || '—'} م</span>
+          <span>${p.images ? p.images.length : 0} صورة</span>
+        </div>
+      </div>
+      <div class="prop-actions">
+        <button class="btn-small" onclick="setStatus('${p.id}','متاح')">متاح</button>
+        <button class="btn-small" onclick="setStatus('${p.id}','تم البيع')">تم البيع</button>
+        <button class="btn-small" onclick="setStatus('${p.id}','تم الايجار')">تم الايجار</button>
+        <button class="btn-ghost" onclick="editProperty('${p.id}')">تعديل</button>
+        <button class="btn-danger" onclick="deleteProperty('${p.id}')">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('listSearch').addEventListener('input', (e)=>{
+  const q = e.target.value.trim();
+  if(!q){ renderList(allProps); return; }
+  const filtered = allProps.filter(p =>
+    (p.mahalla||'').includes(q) || (p.zuqaq||'').includes(q)
+  );
+  renderList(filtered);
+});
+
+window.setStatus = async function(id, status){
+  const { error } = await sb.from('hashimi_properties').update({ status }).eq('id', id);
+  if(error){ alert('تعذر تحديث الحالة'); return; }
+  loadList();
+};
+
+window.editProperty = function(id){
+  const p = allProps.find(x=>x.id === id);
+  if(!p) return;
+  editingId = id;
+  document.getElementById('p_mahalla').value = p.mahalla || '';
+  document.getElementById('p_zuqaq').value = p.zuqaq || '';
+  document.getElementById('p_type').value = p.listing_type || '';
+  document.getElementById('p_area').value = p.area || '';
+  document.getElementById('p_facade').value = p.facade || '';
+  document.getElementById('p_nizal').value = p.nizal || '';
+  document.getElementById('p_status').value = p.status || 'متاح';
+  document.getElementById('p_notes').value = p.notes || '';
+
+  existingImages = p.images ? [...p.images] : [];
+  removedImages = [];
+  queuedFiles = [];
+  renderThumbs();
+
+  document.getElementById('formTitle').textContent = `تعديل عقار — محلة ${p.mahalla}`;
+  document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  document.getElementById('saveBtn').textContent = 'حفظ التعديلات';
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+
+window.deleteProperty = async function(id){
+  if(!confirm('هل أنت متأكد من حذف هذا العقار نهائياً؟ سيتم حذف جميع صوره أيضاً.')) return;
+  const p = allProps.find(x=>x.id === id);
+  if(p && p.images && p.images.length){
+    const paths = p.images.map(extractStoragePath).filter(Boolean);
+    if(paths.length) await sb.storage.from(STORAGE_BUCKET).remove(paths);
+  }
+  const { error } = await sb.from('hashimi_properties').delete().eq('id', id);
+  if(error){ alert('تعذر حذف العقار'); return; }
+  loadList();
+};
+</script>
+</body>
+</html>
